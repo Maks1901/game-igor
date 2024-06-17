@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Gift Chase</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            background-color: #87CEFA;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const playerImage = new Image();
+        playerImage.src = 'https://example.com/player.png'; // заменить на URL изображения игрока
+        const friendImages = [
+            'https://example.com/friend1.png', // заменить на URL изображения друга 1
+            'https://example.com/friend2.png', // заменить на URL изображения друга 2
+            'https://example.com/friend3.png', // заменить на URL изображения друга 3
+            'https://example.com/friend4.png', // заменить на URL изображения друга 4
+            'https://example.com/friend5.png', // заменить на URL изображения друга 5
+            'https://example.com/friend6.png'  // заменить на URL изображения друга 6
+        ].map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+        });
+
+        const player = { x: 380, y: 500, width: 40, height: 40, speed: 5 };
+        const friends = [
+            { x: 100, y: 50, width: 40, height: 40, speed: 2, img: friendImages[0] },
+            { x: 200, y: 100, width: 40, height: 40, speed: 2, img: friendImages[1] },
+            { x: 300, y: 150, width: 40, height: 40, speed: 2, img: friendImages[2] },
+            { x: 400, y: 200, width: 40, height: 40, speed: 2, img: friendImages[3] },
+            { x: 500, y: 250, width: 40, height: 40, speed: 2, img: friendImages[4] },
+            { x: 600, y: 300, width: 40, height: 40, speed: 2, img: friendImages[5] }
+        ];
+
+        let gifts = [];
+        let obstacles = [];
+        let score = 0;
+        let gameOver = false;
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' && player.x > 0) {
+                player.x -= player.speed;
+            } else if (e.key === 'ArrowRight' && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            } else if (e.key === ' ') {
+                hitFriend();
+            }
+        });
+
+        function hitFriend() {
+            friends.forEach((friend, index) => {
+                if (Math.abs(friend.x - player.x) < player.width && Math.abs(friend.y - player.y) < player.height) {
+                    gifts.push({ x: friend.x, y: friend.y, width: 20, height: 20 });
+                    friends.splice(index, 1);
+                    score++;
+                }
+            });
+        }
+
+        function createObstacle() {
+            const obstacle = {
+                x: Math.random() * (canvas.width - 20),
+                y: 0,
+                width: 20,
+                height: 20,
+                speed: 2 + Math.random() * 3
+            };
+            obstacles.push(obstacle);
+        }
+
+        function updateGame() {
+            if (gameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player
+            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+            // Update and draw friends
+            friends.forEach(friend => {
+                friend.y += friend.speed;
+                ctx.drawImage(friend.img, friend.x, friend.y, friend.width, friend.height);
+                if (friend.y > canvas.height) {
+                    friend.y = -friend.height;
+                    friend.x = Math.random() * (canvas.width - friend.width);
+                }
+            });
+
+            // Update and draw obstacles
+            obstacles.forEach((obstacle, index) => {
+                obstacle.y += obstacle.speed;
+                ctx.fillStyle = 'red';
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+                // Check collision with player
+                if (obstacle.y + obstacle.height > player.y && obstacle.y < player.y + player.height && obstacle.x < player.x + player.width && obstacle.x + obstacle.width > player.x) {
+                    gameOver = true;
+                    alert('Game Over! Your score: ' + score);
+                }
+            });
+
+            // Update and draw gifts
+            gifts.forEach((gift, index) => {
+                gift.y += 1;
+                ctx.fillStyle = 'green';
+                ctx.fillRect(gift.x, gift.y, gift.width, gift.height);
+
+                // Remove off-screen gifts
+                if (gift.y > canvas.height) {
+                    gifts.splice(index, 1);
+                }
+            });
+
+            // Remove off-screen obstacles
+            obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+
+            // Add new obstacles
+            if (Math.random() < 0.02) createObstacle();
+
+            // Display score
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + score, 10, 20);
+
+            requestAnimationFrame(updateGame);
+        }
+
+        updateGame();
+    </script>
+</body>
+</html>
